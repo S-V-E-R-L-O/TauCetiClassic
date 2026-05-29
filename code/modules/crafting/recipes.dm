@@ -358,3 +358,14 @@
 	reqs = list(/obj/item/stack/sheet/wood = 3)
 	result = /obj/item/weapon/kitchen/utensil/fork/sticks
 	time = 10
+
+/datum/crafting_recipe/improvised_smasher
+	name = "Кустарный разрубатель"
+	result = /obj/item/weapon/melee/improvised_smasher
+	reqs = list(
+		/obj/item/stack/cable_coil = 5,
+		/obj/item/stack/sheet/metal = 1,
+		/obj/item/light/bulb = 1
+	)
+	tools = list(/obj/item/weapon/screwdriver)
+	time = 100  // 10 секунд
