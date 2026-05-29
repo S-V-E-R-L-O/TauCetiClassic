@@ -65,13 +65,11 @@
 	cases = list("Кустарный разрубатель", "Кустарного разрубателя", "Кустарному разрубателю", "Кустарный разрубатель", "Кустарным разрубателем", "Кустарном разрубателе")
 	desc = "Грубо сваренная из мусора железка, способная крушить всё подряд. Выглядит так, будто вот-вот развалится, но в умелых руках творит чудеса."
 	icon = 'icons/obj/weapons.dmi'
-	icon_state = "sorda"             // пока используем твой старый спрайт, потом заменишь
+	icon_state = "sorda"
 	item_state = "sorda"
 	force = 18
 	throwforce = 10
-	w_class = SIZE_BULKY
+	w_class = 4  // bulky
 	slot_flags = SLOT_FLAGS_BELT
-	attack_verb_continuous = list("крушит", "разрубает", "вгрызается")
-	attack_verb_simple = list("крушить", "разрубить", "вгрызться")
+	attack_verb = list("крушит", "разрубает", "вгрызается")
 	hitsound = 'sound/weapons/bladeslice.ogg'
-	sharpness = SHARP_EDGED
