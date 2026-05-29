@@ -59,3 +59,19 @@
 	throwforce = 10
 	w_class = SIZE_TINY
 	attack_verb = list("stabbed", "jabbed", "iced,")
+
+/obj/item/melee/improvised_smasher
+	name = "Кустарный разрубатель"
+	cases = list("Кустарный разрубатель", "Кустарного разрубателя", "Кустарному разрубателю", "Кустарный разрубатель", "Кустарным разрубателем", "Кустарном разрубателе")
+	desc = "Грубо сваренная из мусора железка, способная крушить всё подряд. Выглядит так, будто вот-вот развалится, но в умелых руках творит чудеса."
+	icon = 'icons/obj/weapons.dmi'
+	icon_state = "sorda"             // пока используем твой старый спрайт, потом заменишь
+	item_state = "sorda"
+	force = 18
+	throwforce = 10
+	w_class = SIZE_BULKY
+	slot_flags = SLOT_FLAGS_BELT
+	attack_verb_continuous = list("крушит", "разрубает", "вгрызается")
+	attack_verb_simple = list("крушить", "разрубить", "вгрызться")
+	hitsound = 'sound/weapons/bladeslice.ogg'
+	sharpness = SHARP_EDGED
