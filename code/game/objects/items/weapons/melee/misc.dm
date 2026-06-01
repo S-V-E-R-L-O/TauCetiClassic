@@ -102,7 +102,7 @@
     var/dash_distance = 3
 
 /obj/item/weapon/melee/improvised_smasher/afterattack(atom/target, mob/living/user, proximity, params)
-    if(!proximity || user.get_active_hand() != src)
+    if(user.get_active_hand() != src)
         return ..()
 
     if(!dash_ready)
@@ -114,6 +114,10 @@
 
     var/turf/target_turf = get_turf(target)
     if(!target_turf)
+        return
+
+    if(!(target_turf in view(user)))
+        to_chat(user, "<span class='warning'>Вы не видите это место!</span>")
         return
 
     // Строим линию от пользователя до цели, ограничиваем длину
@@ -243,9 +247,10 @@
         playsound(src, 'sound/weapons/saberoff.ogg', VOL_EFFECTS_MASTER)
 
 /obj/item/weapon/melee/syndicate_spear/attack(mob/living/M, mob/living/user, def_zone)
+    var/was_alive = (M.stat != DEAD)
     . = ..()
     // Урон растёт, только если цель была жива до удара и умерла от него
-    if(!QDELETED(M) && M.stat == DEAD && M.key && force < max_force)
+    if(!QDELETED(M) && M.stat == DEAD && was_alive && M.key && force < max_force)
         kills++
         update_force()
         to_chat(user, "<span class='notice'>Копьё насыщается кровью! Текущий урон: [force]. Убийств: [kills].</span>")
@@ -256,7 +261,7 @@
     if(!dash_mode)
         return ..()
 
-    if(!proximity || user.get_active_hand() != src)
+    if(user.get_active_hand() != src)
         return ..()
 
     if(!dash_ready)
@@ -268,6 +273,10 @@
 
     var/turf/target_turf = get_turf(target)
     if(!target_turf)
+        return
+
+    if(!(target_turf in view(user)))
+        to_chat(user, "<span class='warning'>Вы не видите это место!</span>")
         return
 
     // Строим линию от пользователя до цели, ограничиваем длину
