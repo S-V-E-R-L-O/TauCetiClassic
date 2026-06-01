@@ -2,6 +2,22 @@
 #define COMSIG_MOB_DEATH "mob_death"
 #endif
 
+/proc/get_line_simple(turf/start, turf/end)
+    var/list/line = list()
+    if(!start || !end || start == end)
+        return line
+    var/current = start
+    while(current && current != end)
+        var/dir = get_dir(current, end)
+        var/turf/next = get_step(current, dir)
+        if(!next)
+            break
+        current = next
+        if(current == end)
+            break
+        line += current
+    return line
+
 /obj/item/weapon/melee/chainofcommand
 	name = "chain of command"
 	desc = "A tool used by great men to placate the frothing masses."
@@ -100,30 +116,22 @@
     if(!target_turf)
         return
 
-    // Проверяем дистанцию
     if(get_dist(user, target_turf) > dash_distance)
         to_chat(user, "<span class='warning'>Слишком далеко!</span>")
         return
 
-    // Проверяем видимость
     if(!(target_turf in view(user)))
         to_chat(user, "<span class='warning'>Вы не видите это место!</span>")
         return
 
-    // Проверяем, что это не стена
     if(target_turf.density)
         to_chat(user, "<span class='warning'>Невозможно совершить рывок в препятствие!</span>")
         return
 
-    // Останавливаем бег
     walk(user, 0)
-    user.move_dir = 0
 
-    // Собираем мобов на линии
     var/list/crossed_mobs = list()
-    for(var/turf/T in get_line(user, target_turf))
-        if(T == get_turf(user))
-            continue
+    for(var/turf/T in get_line_simple(get_turf(user), target_turf))
         for(var/mob/living/L in T)
             if(L != user && !(L in crossed_mobs))
                 crossed_mobs += L
@@ -157,7 +165,6 @@
 /obj/item/weapon/melee/improvised_smasher/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
     if(!QDELETED(user))
         user.next_move = world.time
-        user.move_dir = 0
         walk(user, 0)
         animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
 
@@ -199,7 +206,7 @@
 
     var/dash_ready = TRUE
     var/dash_cooldown = 7 SECONDS
-    var/dash_distance = 4   // копьё бьёт дальше
+    var/dash_distance = 4
 
     var/kills = 0
     var/max_force = 45
@@ -251,30 +258,22 @@
     if(!target_turf)
         return
 
-    // Проверяем дистанцию
     if(get_dist(user, target_turf) > dash_distance)
         to_chat(user, "<span class='warning'>Слишком далеко!</span>")
         return
 
-    // Проверяем видимость
     if(!(target_turf in view(user)))
         to_chat(user, "<span class='warning'>Вы не видите это место!</span>")
         return
 
-    // Проверяем, что это не стена
     if(target_turf.density)
         to_chat(user, "<span class='warning'>Невозможно совершить рывок в препятствие!</span>")
         return
 
-    // Останавливаем бег
     walk(user, 0)
-    user.move_dir = 0
 
-    // Собираем мобов на линии
     var/list/crossed_mobs = list()
-    for(var/turf/T in get_line(user, target_turf))
-        if(T == get_turf(user))
-            continue
+    for(var/turf/T in get_line_simple(get_turf(user), target_turf))
         for(var/mob/living/L in T)
             if(L != user && !(L in crossed_mobs))
                 crossed_mobs += L
@@ -308,7 +307,6 @@
 /obj/item/weapon/melee/syndicate_spear/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
     if(!QDELETED(user))
         user.next_move = world.time
-        user.move_dir = 0
         walk(user, 0)
         animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
 
