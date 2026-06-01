@@ -116,25 +116,36 @@
     if(!target_turf)
         return
 
-    if(get_dist(user, target_turf) > dash_distance)
-        to_chat(user, "<span class='warning'>Слишком далеко!</span>")
-        return
-
-    if(!(target_turf in view(user)))
-        to_chat(user, "<span class='warning'>Вы не видите это место!</span>")
-        return
-
-    if(target_turf.density)
-        to_chat(user, "<span class='warning'>Невозможно совершить рывок в препятствие!</span>")
-        return
-
-    walk(user, 0)
-
+    // Строим линию от пользователя до цели, ограничиваем длину
+    var/list/turflist = getline(get_turf(user), target_turf)
+    var/turf/dash_target = get_turf(user)
     var/list/crossed_mobs = list()
-    for(var/turf/T in get_line_simple(get_turf(user), target_turf))
+    for(var/turf/T in turflist)
+        if(T == get_turf(user))
+            continue
+        // Останавливаемся перед непроходимыми препятствиями (кроме мобов)
+        if(T.density)
+            break
+        var/blocked = FALSE
+        for(var/atom/movable/AM in T)
+            if(AM.density && !ismob(AM))
+                blocked = TRUE
+                break
+        if(blocked)
+            break
+        dash_target = T
+        // Собираем мобов для урона
         for(var/mob/living/L in T)
             if(L != user && !(L in crossed_mobs))
                 crossed_mobs += L
+        if(get_dist(get_turf(user), T) >= dash_distance)
+            break
+
+    if(dash_target == get_turf(user))
+        to_chat(user, "<span class='warning'>Невозможно совершить рывок!</span>")
+        return
+
+    walk(user, 0)
 
     user.visible_message("<span class='danger'>[user] совершает рывок с [src]!</span>")
     playsound(user, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
@@ -145,8 +156,8 @@
     user.SetNextMove(world.time + 3)
 
     var/turf/start = get_turf(user)
-    var/dx = (target_turf.x - start.x) * 32
-    var/dy = (target_turf.y - start.y) * 32
+    var/dx = (dash_target.x - start.x) * 32
+    var/dy = (dash_target.y - start.y) * 32
     var/anim_time = 2
 
     var/matrix/stretch = matrix()
@@ -160,9 +171,9 @@
     animate(user, pixel_x = dx, pixel_y = dy, transform = stretch, time = 0, easing = LINEAR_EASING)
     animate(transform = null, time = anim_time, easing = LINEAR_EASING)
 
-    addtimer(CALLBACK(src, PROC_REF(finish_dash), user, target_turf, crossed_mobs, start), anim_time)
+    addtimer(CALLBACK(src, PROC_REF(finish_dash), user, dash_target, crossed_mobs), anim_time)
 
-/obj/item/weapon/melee/improvised_smasher/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
+/obj/item/weapon/melee/improvised_smasher/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs)
     if(!QDELETED(user))
         user.next_move = world.time
         walk(user, 0)
@@ -233,6 +244,7 @@
 
 /obj/item/weapon/melee/syndicate_spear/attack(mob/living/M, mob/living/user, def_zone)
     . = ..()
+    // Урон растёт, только если цель была жива до удара и умерла от него
     if(!QDELETED(M) && M.stat == DEAD && M.key && force < max_force)
         kills++
         update_force()
@@ -258,25 +270,36 @@
     if(!target_turf)
         return
 
-    if(get_dist(user, target_turf) > dash_distance)
-        to_chat(user, "<span class='warning'>Слишком далеко!</span>")
-        return
-
-    if(!(target_turf in view(user)))
-        to_chat(user, "<span class='warning'>Вы не видите это место!</span>")
-        return
-
-    if(target_turf.density)
-        to_chat(user, "<span class='warning'>Невозможно совершить рывок в препятствие!</span>")
-        return
-
-    walk(user, 0)
-
+    // Строим линию от пользователя до цели, ограничиваем длину
+    var/list/turflist = getline(get_turf(user), target_turf)
+    var/turf/dash_target = get_turf(user)
     var/list/crossed_mobs = list()
-    for(var/turf/T in get_line_simple(get_turf(user), target_turf))
+    for(var/turf/T in turflist)
+        if(T == get_turf(user))
+            continue
+        // Останавливаемся перед непроходимыми препятствиями (кроме мобов)
+        if(T.density)
+            break
+        var/blocked = FALSE
+        for(var/atom/movable/AM in T)
+            if(AM.density && !ismob(AM))
+                blocked = TRUE
+                break
+        if(blocked)
+            break
+        dash_target = T
+        // Собираем мобов для урона
         for(var/mob/living/L in T)
             if(L != user && !(L in crossed_mobs))
                 crossed_mobs += L
+        if(get_dist(get_turf(user), T) >= dash_distance)
+            break
+
+    if(dash_target == get_turf(user))
+        to_chat(user, "<span class='warning'>Невозможно совершить рывок!</span>")
+        return
+
+    walk(user, 0)
 
     user.visible_message("<span class='danger'>[user] совершает рывок с [src]!</span>")
     playsound(user, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
@@ -287,8 +310,8 @@
     user.SetNextMove(world.time + 3)
 
     var/turf/start = get_turf(user)
-    var/dx = (target_turf.x - start.x) * 32
-    var/dy = (target_turf.y - start.y) * 32
+    var/dx = (dash_target.x - start.x) * 32
+    var/dy = (dash_target.y - start.y) * 32
     var/anim_time = 2
 
     var/matrix/stretch = matrix()
@@ -302,9 +325,9 @@
     animate(user, pixel_x = dx, pixel_y = dy, transform = stretch, time = 0, easing = LINEAR_EASING)
     animate(transform = null, time = anim_time, easing = LINEAR_EASING)
 
-    addtimer(CALLBACK(src, PROC_REF(finish_dash), user, target_turf, crossed_mobs, start), anim_time)
+    addtimer(CALLBACK(src, PROC_REF(finish_dash), user, dash_target, crossed_mobs), anim_time)
 
-/obj/item/weapon/melee/syndicate_spear/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
+/obj/item/weapon/melee/syndicate_spear/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs)
     if(!QDELETED(user))
         user.next_move = world.time
         walk(user, 0)
