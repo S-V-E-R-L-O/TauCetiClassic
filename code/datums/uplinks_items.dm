@@ -290,6 +290,13 @@
 	cost = 7
 	uplink_types = list(UPLINK_TYPE_TRAITOR)
 
+/datum/uplink_item/dangerous/syndicate_spear
+	name = "Копьё синдиката"
+	desc = "Зазубренное копьё, становящееся острее с каждой жертвой. Также позволяет совершать стремительный рывок сквозь противников. RUN'GUN KIDDO!"
+	item = /obj/item/weapon/melee/syndicate_spear
+	cost = 8
+	uplink_types = list(UPLINK_TYPE_TRAITOR)
+
 /datum/uplink_item/dangerous/powerfist
 	name = "Power Fist"
 	desc = "The power-fist is a metal gauntlet with a built-in piston-ram powered by an external gas supply.\

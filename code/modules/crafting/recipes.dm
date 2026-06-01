@@ -364,8 +364,8 @@
 	result = /obj/item/weapon/melee/improvised_smasher
 	reqs = list(
 		/obj/item/stack/cable_coil = 5,
-		/obj/item/stack/sheet/metal = 1,
+		/obj/item/stack/sheet/metal = 10,
 		/obj/item/weapon/light/bulb = 1
 	)
 	tools = list(/obj/item/weapon/screwdriver)
-	time = 100  // 10 секунд
+	time = 150  // 15 секунд
