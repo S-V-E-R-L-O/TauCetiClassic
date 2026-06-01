@@ -75,8 +75,8 @@
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	sharp = 1
 	edge = 1
+	can_embed = FALSE
 
-	// Дэш
 	var/dash_ready = TRUE
 	var/dash_cooldown = 10 SECONDS
 	var/dash_distance = 3
@@ -96,6 +96,8 @@
 	if(dir_to_target == 0)
 		return
 
+	walk(user, 0)
+
 	var/turf/start = get_turf(user)
 	var/turf/current = start
 	var/list/crossed_mobs = list()
@@ -117,17 +119,13 @@
 			if(L != user && !(L in crossed_mobs))
 				crossed_mobs += L
 
-	if(current == start)
-		to_chat(user, "<span class='warning'>Невозможно совершить рывок!</span>")
-		return
-
 	user.visible_message("<span class='danger'>[user] совершает рывок с [src]!</span>")
 	playsound(user, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
 
 	dash_ready = FALSE
 	addtimer(CALLBACK(src, PROC_REF(reset_dash)), dash_cooldown)
 
-	// === Анимация рывка ===
+	// Блокируем действия на время анимации
 	user.SetNextMove(world.time + 3)
 
 	var/dx = 0, dy = 0
@@ -156,13 +154,6 @@
 		stretch.Scale(0.8, 1.5)
 	else
 		stretch.Scale(1.3, 1.3)
-
-	// Звук дэша
-	var/sound/dash_sound = new('sound/weapons/bladeslice.ogg', channel = 101, volume = 80)
-	dash_sound.atom = user
-	dash_sound.x = 0; dash_sound.y = 0; dash_sound.z = 0
-	dash_sound.falloff = 3
-	user << dash_sound
 
 	animate(user, pixel_x = dx, pixel_y = dy, transform = stretch, time = 0, easing = LINEAR_EASING)
 	animate(transform = null, time = anim_time, easing = LINEAR_EASING)
@@ -180,10 +171,11 @@
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
 		to_chat(user, "<span class='warning'>Рывок заблокирован!</span>")
 		return
-	if(!user.forceMove(target_turf))
-		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		to_chat(user, "<span class='warning'>Рывок не удался!</span>")
-		return
+
+	user.forceMove(target_turf)
+	animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
+
+	user.next_move = world.time
 
 	if(crossed_mobs.len)
 		for(var/mob/living/L in crossed_mobs)
@@ -192,15 +184,10 @@
 				L.visible_message("<span class='danger'>[user] проносится сквозь [L], нанося урон [src]!</span>")
 		playsound(target_turf, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
 
-	animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-
 /obj/item/weapon/melee/improvised_smasher/proc/reset_dash()
 	dash_ready = TRUE
 	if(ismob(loc))
-		var/mob/holder = loc
-		to_chat(holder, "<span class='notice'>[src] снова готов к рывку.</span>")
-		var/sound/ready_sound = new('sound/weapons/bladeslice.ogg', channel = 103, volume = 20)
-		holder << ready_sound
+		to_chat(loc, "<span class='notice'>[src] снова готов к рывку.</span>")
 
 /obj/item/weapon/melee/syndicate_spear
 	name = "Копьё синдиката"
@@ -217,16 +204,20 @@
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	sharp = 1
 	edge = 1
+	can_embed = FALSE
 
-	// Дэш
 	var/dash_ready = TRUE
 	var/dash_cooldown = 7 SECONDS
 	var/dash_distance = 3
 
-	// Усиление от убийств
 	var/kills = 0
 	var/max_force = 45
 	var/base_force = 15
+
+	var/dash_mode = TRUE
+
+	// Отслеживание врагов: WEAKREF -> list(mob, world.time)
+	var/list/tracked_targets = list()
 
 /obj/item/weapon/melee/syndicate_spear/atom_init(mapload)
 	. = ..()
@@ -235,17 +226,60 @@
 /obj/item/weapon/melee/syndicate_spear/proc/update_force()
 	force = min(base_force + kills * 2, max_force)
 
+/obj/item/weapon/melee/syndicate_spear/attack_self(mob/user)
+	..()
+	dash_mode = !dash_mode
+	if(dash_mode)
+		to_chat(user, "<span class='notice'>Копьё переведено в режим рывка.</span>")
+		playsound(src, 'sound/weapons/saberon.ogg', VOL_EFFECTS_MASTER)
+	else
+		to_chat(user, "<span class='notice'>Копьё переведено в боевой режим.</span>")
+		playsound(src, 'sound/weapons/saberoff.ogg', VOL_EFFECTS_MASTER)
+
 /obj/item/weapon/melee/syndicate_spear/attack(mob/living/M, mob/living/user, def_zone)
-	var/had_client = M.client ? TRUE : FALSE
 	. = ..()
-	if(!QDELETED(M) && M.stat == DEAD && had_client && (force < max_force))
-		kills++
-		update_force()
-		to_chat(user, "<span class='notice'>Копьё насыщается кровью! Текущий урон: [force]. Убийств: [kills].</span>")
-		if(force >= max_force)
-			to_chat(user, "<span class='warning'>Копьё достигло максимальной остроты.</span>")
+	if(QDELETED(M) || M.stat == DEAD)
+		return
+
+	// Следим только за игроками, у которых есть key
+	if(M.key)
+		var/datum/weakref/ref = WEAKREF(M)
+		if(!(ref in tracked_targets))
+			RegisterSignal(M, COMSIG_MOB_DEATH, PROC_REF(on_target_death))
+		tracked_targets[ref] = list("mob" = M, "time" = world.time)
+
+/obj/item/weapon/melee/syndicate_spear/proc/on_target_death(mob/living/target)
+	SIGNAL_HANDLER
+	var/datum/weakref/ref = WEAKREF(target)
+	if(ref in tracked_targets)
+		var/list/data = tracked_targets[ref]
+		var/last_hit = data["time"]
+		tracked_targets -= ref
+		UnregisterSignal(target, COMSIG_MOB_DEATH)
+
+		// Смерть в течение 30 секунд после последнего удара = засчитываем
+		if(world.time - last_hit <= 30 SECONDS && force < max_force)
+			kills++
+			update_force()
+			var/mob/holder = loc
+			if(ismob(holder))
+				to_chat(holder, "<span class='notice'>Копьё насыщается кровью поверженного врага! Текущий урон: [force]. Убийств: [kills].</span>")
+				if(force >= max_force)
+					to_chat(holder, "<span class='warning'>Копьё достигло максимальной остроты.</span>")
+
+/obj/item/weapon/melee/syndicate_spear/Destroy()
+	// Очищаем все отслеживаемые сигналы
+	for(var/ref in tracked_targets)
+		var/mob/M = tracked_targets[ref]["mob"]
+		if(!QDELETED(M))
+			UnregisterSignal(M, COMSIG_MOB_DEATH)
+	tracked_targets = null
+	return ..()
 
 /obj/item/weapon/melee/syndicate_spear/afterattack(atom/target, mob/living/user, proximity, params)
+	if(!dash_mode)
+		return ..()
+
 	if(!proximity || user.get_active_hand() != src)
 		return ..()
 
@@ -259,6 +293,8 @@
 	var/dir_to_target = get_dir(user, target)
 	if(dir_to_target == 0)
 		return
+
+	walk(user, 0)
 
 	var/turf/start = get_turf(user)
 	var/turf/current = start
@@ -281,17 +317,12 @@
 			if(L != user && !(L in crossed_mobs))
 				crossed_mobs += L
 
-	if(current == start)
-		to_chat(user, "<span class='warning'>Невозможно совершить рывок!</span>")
-		return
-
 	user.visible_message("<span class='danger'>[user] совершает рывок с [src]!</span>")
 	playsound(user, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
 
 	dash_ready = FALSE
 	addtimer(CALLBACK(src, PROC_REF(reset_dash)), dash_cooldown)
 
-	// === Анимация рывка ===
 	user.SetNextMove(world.time + 3)
 
 	var/dx = 0, dy = 0
@@ -321,13 +352,6 @@
 	else
 		stretch.Scale(1.3, 1.3)
 
-	// Звук дэша
-	var/sound/dash_sound = new('sound/weapons/bladeslice.ogg', channel = 101, volume = 80)
-	dash_sound.atom = user
-	dash_sound.x = 0; dash_sound.y = 0; dash_sound.z = 0
-	dash_sound.falloff = 3
-	user << dash_sound
-
 	animate(user, pixel_x = dx, pixel_y = dy, transform = stretch, time = 0, easing = LINEAR_EASING)
 	animate(transform = null, time = anim_time, easing = LINEAR_EASING)
 
@@ -344,10 +368,10 @@
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
 		to_chat(user, "<span class='warning'>Рывок заблокирован!</span>")
 		return
-	if(!user.forceMove(target_turf))
-		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		to_chat(user, "<span class='warning'>Рывок не удался!</span>")
-		return
+
+	user.forceMove(target_turf)
+	animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
+	user.next_move = world.time
 
 	if(crossed_mobs.len)
 		for(var/mob/living/L in crossed_mobs)
@@ -356,12 +380,7 @@
 				L.visible_message("<span class='danger'>[user] пронзает [L] копьём, проносясь сквозь!</span>")
 		playsound(target_turf, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
 
-	animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-
 /obj/item/weapon/melee/syndicate_spear/proc/reset_dash()
 	dash_ready = TRUE
 	if(ismob(loc))
-		var/mob/holder = loc
-		to_chat(holder, "<span class='notice'>Копьё снова готово к рывку.</span>")
-		var/sound/ready_sound = new('sound/weapons/bladeslice.ogg', channel = 103, volume = 20)
-		holder << ready_sound
+		to_chat(loc, "<span class='notice'>Копьё снова готово к рывку.</span>")
