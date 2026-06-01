@@ -212,7 +212,7 @@
 	force = 15
 	throwforce = 15
 	w_class = 4
-	slot_flags = SLOT_FLAGS_BACK   // только на спину
+	slot_flags = SLOT_FLAGS_BACK
 	attack_verb = list("пронзает", "вонзает", "протыкает")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	sharp = 1
@@ -245,12 +245,12 @@
 		if(force >= max_force)
 			to_chat(user, "<span class='warning'>Копьё достигло максимальной остроты.</span>")
 
-/obj/item/weapon/melee/improvised_smasher/afterattack(atom/target, mob/living/user, proximity, params)
+/obj/item/weapon/melee/syndicate_spear/afterattack(atom/target, mob/living/user, proximity, params)
 	if(!proximity || user.get_active_hand() != src)
 		return ..()
 
 	if(!dash_ready)
-		to_chat(user, "<span class='warning'>[src] ещё не готов к рывку!</span>")
+		to_chat(user, "<span class='warning'>Копьё ещё не готово к рывку!</span>")
 		return
 
 	if(user.incapacitated())
@@ -333,7 +333,7 @@
 
 	addtimer(CALLBACK(src, PROC_REF(finish_dash), user, current, crossed_mobs, start), anim_time)
 
-/obj/item/weapon/melee/improvised_smasher/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
+/obj/item/weapon/melee/syndicate_spear/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
 	if(QDELETED(user))
 		return
 	if(get_turf(user) != start)
@@ -353,7 +353,7 @@
 		for(var/mob/living/L in crossed_mobs)
 			if(L != user)
 				L.take_bodypart_damage(force / 2)
-				L.visible_message("<span class='danger'>[user] проносится сквозь [L], нанося урон [src]!</span>")
+				L.visible_message("<span class='danger'>[user] пронзает [L] копьём, проносясь сквозь!</span>")
 		playsound(target_turf, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
 
 	animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
