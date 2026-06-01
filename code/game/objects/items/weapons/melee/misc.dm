@@ -1,3 +1,7 @@
+#ifndef COMSIG_MOB_DEATH
+#define COMSIG_MOB_DEATH "mob_death"
+#endif
+
 /obj/item/weapon/melee/chainofcommand
 	name = "chain of command"
 	desc = "A tool used by great men to placate the frothing masses."
