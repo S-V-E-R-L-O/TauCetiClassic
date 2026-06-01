@@ -131,15 +131,22 @@
 	user.SetNextMove(world.time + 3)
 
 	var/dx = 0, dy = 0
-	switch(dir_to_target)
-		if(NORTH)      dy = (current.y - start.y) * 32
-		if(SOUTH)      dy = (current.y - start.y) * 32
-		if(EAST)       dx = (current.x - start.x) * 32
-		if(WEST)       dx = (current.x - start.x) * 32
-		if(NORTHEAST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
-		if(NORTHWEST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
-		if(SOUTHEAST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
-		if(SOUTHWEST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	if(dir_to_target == NORTH)
+		dy = (current.y - start.y) * 32
+	else if(dir_to_target == SOUTH)
+		dy = (current.y - start.y) * 32
+	else if(dir_to_target == EAST)
+		dx = (current.x - start.x) * 32
+	else if(dir_to_target == WEST)
+		dx = (current.x - start.x) * 32
+	else if(dir_to_target == NORTHEAST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	else if(dir_to_target == NORTHWEST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	else if(dir_to_target == SOUTHEAST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	else if(dir_to_target == SOUTHWEST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
 
 	var/anim_time = 2
 	var/matrix/stretch = matrix()
@@ -150,9 +157,6 @@
 	else
 		stretch.Scale(1.3, 1.3)
 
-	var/filter/blur_filter = filter(type="blur", size=2)
-	user.filters += blur_filter
-
 	// Звук дэша
 	var/sound/dash_sound = new('sound/weapons/bladeslice.ogg', channel = 101, volume = 80)
 	dash_sound.atom = user
@@ -162,26 +166,22 @@
 
 	animate(user, pixel_x = dx, pixel_y = dy, transform = stretch, time = 0, easing = LINEAR_EASING)
 	animate(transform = null, time = anim_time, easing = LINEAR_EASING)
-	animate(blur_filter, size=0, time=anim_time)
 
-	addtimer(CALLBACK(src, PROC_REF(finish_dash), user, current, blur_filter, crossed_mobs, start), anim_time)
+	addtimer(CALLBACK(src, PROC_REF(finish_dash), user, current, crossed_mobs, start), anim_time)
 
-/obj/item/weapon/melee/improvised_smasher/proc/finish_dash(mob/living/user, turf/target_turf, filter/blur_filter, list/crossed_mobs, turf/start)
+/obj/item/weapon/melee/improvised_smasher/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
 	if(QDELETED(user))
 		return
 	if(get_turf(user) != start)
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		user.filters -= blur_filter
 		to_chat(user, "<span class='warning'>Рывок прерван!</span>")
 		return
 	if(!target_turf || target_turf.density)
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		user.filters -= blur_filter
 		to_chat(user, "<span class='warning'>Рывок заблокирован!</span>")
 		return
 	if(!user.forceMove(target_turf))
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		user.filters -= blur_filter
 		to_chat(user, "<span class='warning'>Рывок не удался!</span>")
 		return
 
@@ -193,7 +193,6 @@
 		playsound(target_turf, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
 
 	animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-	user.filters -= blur_filter
 
 /obj/item/weapon/melee/improvised_smasher/proc/reset_dash()
 	dash_ready = TRUE
@@ -246,12 +245,12 @@
 		if(force >= max_force)
 			to_chat(user, "<span class='warning'>Копьё достигло максимальной остроты.</span>")
 
-/obj/item/weapon/melee/syndicate_spear/afterattack(atom/target, mob/living/user, proximity, params)
+/obj/item/weapon/melee/improvised_smasher/afterattack(atom/target, mob/living/user, proximity, params)
 	if(!proximity || user.get_active_hand() != src)
 		return ..()
 
 	if(!dash_ready)
-		to_chat(user, "<span class='warning'>Копьё ещё не готово к рывку!</span>")
+		to_chat(user, "<span class='warning'>[src] ещё не готов к рывку!</span>")
 		return
 
 	if(user.incapacitated())
@@ -296,15 +295,22 @@
 	user.SetNextMove(world.time + 3)
 
 	var/dx = 0, dy = 0
-	switch(dir_to_target)
-		if(NORTH)      dy = (current.y - start.y) * 32
-		if(SOUTH)      dy = (current.y - start.y) * 32
-		if(EAST)       dx = (current.x - start.x) * 32
-		if(WEST)       dx = (current.x - start.x) * 32
-		if(NORTHEAST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
-		if(NORTHWEST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
-		if(SOUTHEAST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
-		if(SOUTHWEST)  dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	if(dir_to_target == NORTH)
+		dy = (current.y - start.y) * 32
+	else if(dir_to_target == SOUTH)
+		dy = (current.y - start.y) * 32
+	else if(dir_to_target == EAST)
+		dx = (current.x - start.x) * 32
+	else if(dir_to_target == WEST)
+		dx = (current.x - start.x) * 32
+	else if(dir_to_target == NORTHEAST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	else if(dir_to_target == NORTHWEST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	else if(dir_to_target == SOUTHEAST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
+	else if(dir_to_target == SOUTHWEST)
+		dx = (current.x - start.x) * 32; dy = (current.y - start.y) * 32
 
 	var/anim_time = 2
 	var/matrix/stretch = matrix()
@@ -315,9 +321,6 @@
 	else
 		stretch.Scale(1.3, 1.3)
 
-	var/filter/blur_filter = filter(type="blur", size=2)
-	user.filters += blur_filter
-
 	// Звук дэша
 	var/sound/dash_sound = new('sound/weapons/bladeslice.ogg', channel = 101, volume = 80)
 	dash_sound.atom = user
@@ -327,26 +330,22 @@
 
 	animate(user, pixel_x = dx, pixel_y = dy, transform = stretch, time = 0, easing = LINEAR_EASING)
 	animate(transform = null, time = anim_time, easing = LINEAR_EASING)
-	animate(blur_filter, size=0, time=anim_time)
 
-	addtimer(CALLBACK(src, PROC_REF(finish_dash), user, current, blur_filter, crossed_mobs, start), anim_time)
+	addtimer(CALLBACK(src, PROC_REF(finish_dash), user, current, crossed_mobs, start), anim_time)
 
-/obj/item/weapon/melee/syndicate_spear/proc/finish_dash(mob/living/user, turf/target_turf, filter/blur_filter, list/crossed_mobs, turf/start)
+/obj/item/weapon/melee/improvised_smasher/proc/finish_dash(mob/living/user, turf/target_turf, list/crossed_mobs, turf/start)
 	if(QDELETED(user))
 		return
 	if(get_turf(user) != start)
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		user.filters -= blur_filter
 		to_chat(user, "<span class='warning'>Рывок прерван!</span>")
 		return
 	if(!target_turf || target_turf.density)
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		user.filters -= blur_filter
 		to_chat(user, "<span class='warning'>Рывок заблокирован!</span>")
 		return
 	if(!user.forceMove(target_turf))
 		animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-		user.filters -= blur_filter
 		to_chat(user, "<span class='warning'>Рывок не удался!</span>")
 		return
 
@@ -354,11 +353,10 @@
 		for(var/mob/living/L in crossed_mobs)
 			if(L != user)
 				L.take_bodypart_damage(force / 2)
-				L.visible_message("<span class='danger'>[user] пронзает [L] копьём, проносясь сквозь!</span>")
+				L.visible_message("<span class='danger'>[user] проносится сквозь [L], нанося урон [src]!</span>")
 		playsound(target_turf, 'sound/weapons/bladeslice.ogg', VOL_EFFECTS_MASTER)
 
 	animate(user, pixel_x = 0, pixel_y = 0, transform = null, time = 0)
-	user.filters -= blur_filter
 
 /obj/item/weapon/melee/syndicate_spear/proc/reset_dash()
 	dash_ready = TRUE
